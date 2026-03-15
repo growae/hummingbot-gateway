@@ -150,12 +150,7 @@ export async function fetchPoolInfo(
     } else if (chain === 'aeternity') {
       const { Superhero } = await import(`../connectors/superhero/superhero`);
       const instance = await Superhero.getInstance(network);
-
-      if (type === 'amm' && instance.getPoolInfoByAddress) {
-        poolInfo = await instance.getPoolInfoByAddress(poolAddress);
-      } else if (instance.getPoolInfo) {
-        poolInfo = await instance.getPoolInfo(poolAddress);
-      }
+      poolInfo = await instance.getPoolInfoByAddress(poolAddress);
     } else {
       logger.error(`Unsupported chain: ${chain} for connector: ${connector}`);
       return null;

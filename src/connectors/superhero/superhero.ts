@@ -143,6 +143,34 @@ export class Superhero {
     };
   }
 
+  public async getPoolInfoByAddress(poolAddress: string): Promise<{
+    baseTokenAddress: string;
+    quoteTokenAddress: string;
+    feePct: number;
+  } | null> {
+    try {
+      const sdk = this._aeternity.sdk;
+      const pair = await initializeContractTyped<PairContractApi>(sdk, {
+        aci: ACI.Pair,
+        address: poolAddress,
+      });
+
+      const [{ decodedResult: token0 }, { decodedResult: token1 }] = await Promise.all([
+        pair.token0(),
+        pair.token1(),
+      ]);
+
+      return {
+        baseTokenAddress: token0,
+        quoteTokenAddress: token1,
+        feePct: 0.3,
+      };
+    } catch (e: any) {
+      logger.error(`Error fetching pool info for ${poolAddress}: ${e.message}`);
+      return null;
+    }
+  }
+
   public resolveTokenAddress(symbolOrAddress: string): string {
     if (symbolOrAddress === 'AE') return this.waeAddress;
     if (symbolOrAddress === 'WAE') return this.waeAddress;
