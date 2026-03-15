@@ -83,6 +83,15 @@ export class TokenService {
     const tokenListPath = this.getTokenListPath(chain, network);
 
     if (!fs.existsSync(tokenListPath)) {
+      // Auto-create empty token list if directory can be created safely
+      const dirPath = path.dirname(tokenListPath);
+      const expectedRoot = path.join(rootPath(), 'conf', 'tokens');
+      if (path.resolve(dirPath).startsWith(path.resolve(expectedRoot))) {
+        await fse.ensureDir(dirPath);
+        await writeFile(tokenListPath, '[]', 'utf8');
+        logger.info(`Created empty token list for ${chain}/${network} at ${tokenListPath}`);
+        return [];
+      }
       throw new Error(`Token list not found for ${chain}/${network} at ${tokenListPath}`);
     }
 
