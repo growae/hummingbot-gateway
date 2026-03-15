@@ -1,12 +1,13 @@
 import { FastifyPluginAsync } from 'fastify';
 
+import { Static } from '@sinclair/typebox';
+
 import {
-  GetPositionInfoRequestType,
-  GetPositionInfoRequest,
   PositionInfo,
   PositionInfoSchema,
 } from '../../../schemas/amm-schema';
 import { logger } from '../../../services/logger';
+import { SuperheroAmmGetPositionInfoRequest } from '../schemas';
 import { Superhero } from '../superhero';
 import {
   ACI,
@@ -17,7 +18,7 @@ import { fromAettos } from '../superhero.utils';
 
 export const positionInfoRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get<{
-    Querystring: GetPositionInfoRequestType;
+    Querystring: Static<typeof SuperheroAmmGetPositionInfoRequest>;
     Reply: PositionInfo;
   }>(
     '/position-info',
@@ -25,13 +26,13 @@ export const positionInfoRoute: FastifyPluginAsync = async (fastify) => {
       schema: {
         description: 'Get position information for a Superhero DEX pool',
         tags: ['/connector/superhero'],
-        querystring: GetPositionInfoRequest,
+        querystring: SuperheroAmmGetPositionInfoRequest,
         response: { 200: PositionInfoSchema },
       },
     },
     async (request) => {
       try {
-        const { network, poolAddress, walletAddress: requestedWalletAddress } = request.query;
+        const { network = 'mainnet', poolAddress, walletAddress: requestedWalletAddress } = request.query;
 
         if (!poolAddress) {
           throw fastify.httpErrors.badRequest('Pool address is required');

@@ -27,7 +27,7 @@ export const poolInfoRoute: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       try {
-        const { poolAddress, network } = request.query;
+        const { poolAddress, network = 'mainnet' } = request.query;
         const superhero = await Superhero.getInstance(network);
         const sdk = superhero.aeternity.sdk;
 

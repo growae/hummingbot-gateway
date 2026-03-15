@@ -107,7 +107,7 @@ export const quoteSwapRoute: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       try {
-        const { network, poolAddress, baseToken, quoteToken, amount, side, slippagePct } = request.query;
+        const { network = 'mainnet', poolAddress, baseToken, quoteToken, amount, side, slippagePct } = request.query;
 
         if (!baseToken || !amount || !side) {
           throw fastify.httpErrors.badRequest('baseToken, amount, and side are required');

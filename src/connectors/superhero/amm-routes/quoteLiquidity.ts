@@ -1,12 +1,13 @@
 import { FastifyPluginAsync } from 'fastify';
 
+import { Static } from '@sinclair/typebox';
+
 import {
-  QuoteLiquidityRequestType,
-  QuoteLiquidityRequest,
   QuoteLiquidityResponseType,
   QuoteLiquidityResponse,
 } from '../../../schemas/amm-schema';
 import { logger } from '../../../services/logger';
+import { SuperheroAmmQuoteLiquidityRequest } from '../schemas';
 import { Superhero } from '../superhero';
 import {
   ACI,
@@ -19,7 +20,7 @@ export const quoteLiquidityRoute: FastifyPluginAsync = async (fastify) => {
   await fastify.register(require('@fastify/sensible'));
 
   fastify.get<{
-    Querystring: QuoteLiquidityRequestType;
+    Querystring: Static<typeof SuperheroAmmQuoteLiquidityRequest>;
     Reply: QuoteLiquidityResponseType;
   }>(
     '/quote-liquidity',
@@ -27,13 +28,13 @@ export const quoteLiquidityRoute: FastifyPluginAsync = async (fastify) => {
       schema: {
         description: 'Get liquidity quote for a Superhero DEX pool',
         tags: ['/connector/superhero'],
-        querystring: QuoteLiquidityRequest,
+        querystring: SuperheroAmmQuoteLiquidityRequest,
         response: { 200: QuoteLiquidityResponse },
       },
     },
     async (request) => {
       try {
-        const { network, poolAddress, baseTokenAmount, quoteTokenAmount } = request.query;
+        const { network = 'mainnet', poolAddress, baseTokenAmount, quoteTokenAmount } = request.query;
 
         if (!poolAddress) {
           throw fastify.httpErrors.badRequest('Pool address is required');
