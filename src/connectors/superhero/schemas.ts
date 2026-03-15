@@ -84,3 +84,42 @@ export const SuperheroAmmRemoveLiquidityRequest = Type.Object({
   poolAddress: Type.String({ description: 'Address of the Superhero DEX pair' }),
   percentageToRemove: Type.Number({ minimum: 0, maximum: 100, description: 'Percentage of LP to remove' }),
 });
+
+export const SuperheroAmmGetPositionInfoRequest = Type.Object({
+  network: Type.Optional(
+    Type.String({
+      description: 'The Aeternity network to use',
+      default: aeternityChainConfig.defaultNetwork,
+      enum: [...SuperheroConfig.networks],
+    }),
+  ),
+  poolAddress: Type.String({
+    description: 'Superhero DEX pair address (ct_ prefix)',
+    examples: [POOL_ADDRESS_EXAMPLE],
+  }),
+  walletAddress: Type.Optional(
+    Type.String({
+      description: 'Wallet address (ak_ prefix)',
+      default: aeternityChainConfig.defaultWallet,
+    }),
+  ),
+});
+
+export const SuperheroAmmQuoteLiquidityRequest = Type.Object({
+  network: Type.Optional(
+    Type.String({
+      description: 'The Aeternity network to use',
+      default: aeternityChainConfig.defaultNetwork,
+      enum: [...SuperheroConfig.networks],
+    }),
+  ),
+  poolAddress: Type.String({
+    description: 'Superhero DEX pair address (ct_ prefix)',
+    examples: [POOL_ADDRESS_EXAMPLE],
+  }),
+  baseTokenAmount: Type.Optional(Type.Number({ description: 'Desired amount of base token' })),
+  quoteTokenAmount: Type.Optional(Type.Number({ description: 'Desired amount of quote token' })),
+  slippagePct: Type.Optional(
+    Type.Number({ minimum: 0, maximum: 100, default: SuperheroConfig.config.slippagePct }),
+  ),
+});

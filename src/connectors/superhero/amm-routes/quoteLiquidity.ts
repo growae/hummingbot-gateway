@@ -47,14 +47,17 @@ export const quoteLiquidityRoute: FastifyPluginAsync = async (fastify) => {
           address: poolAddress,
         });
 
-        const { decodedResult: token0 } = await pair.token0();
-        const { decodedResult: reserves } = await pair.get_reserves();
+        const [{ decodedResult: token0 }, { decodedResult: token1 }, { decodedResult: reserves }] =
+          await Promise.all([pair.token0(), pair.token1(), pair.get_reserves()]);
         const reserve0 = BigInt(reserves.reserve0);
         const reserve1 = BigInt(reserves.reserve1);
 
-        const token0Info = await superhero.getToken(token0);
+        const [token0Info, token1Info] = await Promise.all([
+          superhero.getToken(token0),
+          superhero.getToken(token1),
+        ]);
         const token0Decimals = token0Info?.decimals ?? 18;
-        const token1Decimals = 18;
+        const token1Decimals = token1Info?.decimals ?? 18;
 
         let baseTokenAmountOptimal = baseTokenAmount;
         let quoteTokenAmountOptimal = quoteTokenAmount;

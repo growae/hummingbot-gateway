@@ -53,16 +53,16 @@ export const positionInfoRoute: FastifyPluginAsync = async (fastify) => {
           address: poolAddress,
         });
 
-        const { decodedResult: lpBalanceRaw } = await pair.balance(walletAddress);
+        const [{ decodedResult: token0 }, { decodedResult: token1 }, { decodedResult: lpBalanceRaw }] =
+          await Promise.all([pair.token0(), pair.token1(), pair.balance(walletAddress)]);
         const lpBalance = BigInt(lpBalanceRaw ?? 0);
 
         if (lpBalance === 0n) {
-          const { decodedResult: token0 } = await pair.token0();
           return {
             poolAddress,
             walletAddress,
             baseTokenAddress: token0,
-            quoteTokenAddress: 'unknown',
+            quoteTokenAddress: token1,
             lpTokenAmount: 0,
             baseTokenAmount: 0,
             quoteTokenAmount: 0,
@@ -70,9 +70,8 @@ export const positionInfoRoute: FastifyPluginAsync = async (fastify) => {
           };
         }
 
-        const { decodedResult: token0 } = await pair.token0();
-        const { decodedResult: reserves } = await pair.get_reserves();
-        const { decodedResult: totalSupplyRaw } = await pair.total_supply();
+        const [{ decodedResult: reserves }, { decodedResult: totalSupplyRaw }] =
+          await Promise.all([pair.get_reserves(), pair.total_supply()]);
         const totalSupply = BigInt(totalSupplyRaw);
 
         const reserve0 = BigInt(reserves.reserve0);
@@ -81,9 +80,12 @@ export const positionInfoRoute: FastifyPluginAsync = async (fastify) => {
         const userBase = (lpBalance * reserve0) / totalSupply;
         const userQuote = (lpBalance * reserve1) / totalSupply;
 
-        const token0Info = await superhero.getToken(token0);
+        const [token0Info, token1Info] = await Promise.all([
+          superhero.getToken(token0),
+          superhero.getToken(token1),
+        ]);
         const token0Decimals = token0Info?.decimals ?? 18;
-        const token1Decimals = 18;
+        const token1Decimals = token1Info?.decimals ?? 18;
 
         const baseAmount = fromAettos(userBase, token0Decimals);
         const quoteAmount = fromAettos(userQuote, token1Decimals);
@@ -97,7 +99,7 @@ export const positionInfoRoute: FastifyPluginAsync = async (fastify) => {
           poolAddress,
           walletAddress,
           baseTokenAddress: token0,
-          quoteTokenAddress: 'unknown',
+          quoteTokenAddress: token1,
           lpTokenAmount: lpAmount,
           baseTokenAmount: baseAmount,
           quoteTokenAmount: quoteAmount,

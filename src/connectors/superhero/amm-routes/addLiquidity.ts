@@ -64,14 +64,15 @@ export const addLiquidityRoute: FastifyPluginAsync = async (fastify) => {
           aci: ACI.Pair,
           address: poolAddress,
         });
-        const { decodedResult: token0 } = await pair.token0();
+        const [{ decodedResult: token0 }, { decodedResult: token1 }] =
+          await Promise.all([pair.token0(), pair.token1()]);
 
-        // Determine token1 — we need both token addresses but the pair only exposes token0.
-        // We'll get this from the factory by checking both tokens in the pool.
-        // For now, we derive from reserves ordering.
-        const token0Info = await superhero.getToken(token0);
+        const [token0Info, token1Info] = await Promise.all([
+          superhero.getToken(token0),
+          superhero.getToken(token1),
+        ]);
         const token0Decimals = token0Info?.decimals ?? 18;
-        const token1Decimals = 18;
+        const token1Decimals = token1Info?.decimals ?? 18;
 
         const amountADesired = toAettos(baseTokenAmount, token0Decimals);
         const amountBDesired = toAettos(quoteTokenAmount, token1Decimals);
@@ -80,28 +81,34 @@ export const addLiquidityRoute: FastifyPluginAsync = async (fastify) => {
         const deadline = BigInt(Date.now() + 20 * 60 * 1000);
         const ownerAddress = account.address;
 
-        // Check if either token is AE (WAE)
         const token0IsAe = token0 === waeAddress;
+        const token1IsAe = token1 === waeAddress;
 
         let result: any;
 
         if (token0IsAe) {
-          // token0 is WAE, so we use add_liquidity_ae. token1 is the other token.
-          // We need token1 address — since we don't know it directly, we use quoteToken
-          // For this route, the caller should provide a valid poolAddress.
-          // Ensure allowance for token1 (quoteToken)
-          // Note: we can't easily determine token1 from just the pair contract.
-          // We'll use the factory pattern or trust the caller's token amounts correspond to the pair order.
-          await ensureAllowanceForRouter(sdk, token0, ownerAddress, amountADesired, routerAddress);
-          result = await router.add_liquidity(
-            token0, token0, // placeholder - will be resolved by the contract
-            amountADesired, amountBDesired, amountAMin, amountBMin,
+          await ensureAllowanceForRouter(sdk, token1, ownerAddress, amountBDesired, routerAddress);
+          result = await router.add_liquidity_ae(
+            token1, amountBDesired,
+            amountBMin, amountAMin,
             ownerAddress, MINIMUM_LIQUIDITY, deadline,
+            { amount: amountADesired.toString() },
+          );
+        } else if (token1IsAe) {
+          await ensureAllowanceForRouter(sdk, token0, ownerAddress, amountADesired, routerAddress);
+          result = await router.add_liquidity_ae(
+            token0, amountADesired,
+            amountAMin, amountBMin,
+            ownerAddress, MINIMUM_LIQUIDITY, deadline,
+            { amount: amountBDesired.toString() },
           );
         } else {
-          await ensureAllowanceForRouter(sdk, token0, ownerAddress, amountADesired, routerAddress);
+          await Promise.all([
+            ensureAllowanceForRouter(sdk, token0, ownerAddress, amountADesired, routerAddress),
+            ensureAllowanceForRouter(sdk, token1, ownerAddress, amountBDesired, routerAddress),
+          ]);
           result = await router.add_liquidity(
-            token0, token0,
+            token0, token1,
             amountADesired, amountBDesired, amountAMin, amountBMin,
             ownerAddress, MINIMUM_LIQUIDITY, deadline,
           );

@@ -22,6 +22,7 @@ jest.mock('../../../../src/services/logger', () => ({
 
 const MOCK_POOL_ADDRESS = 'ct_pair3333333333333333333333333333333333333333';
 const MOCK_TOKEN0 = 'ct_base111111111111111111111111111111111111111';
+const MOCK_TOKEN1 = 'ct_J3zBY8xxjsRr3QojETNw48Eb38fjvEuJKkQ6KzECvubvEcvCa';
 
 const buildApp = async () => {
   const server = fastifyWithTypeProvider();
@@ -54,6 +55,7 @@ describe('GET /pool-info (Superhero)', () => {
 
     const mockPairContract = {
       token0: jest.fn().mockResolvedValue({ decodedResult: MOCK_TOKEN0 }),
+      token1: jest.fn().mockResolvedValue({ decodedResult: MOCK_TOKEN1 }),
       get_reserves: jest.fn().mockResolvedValue({
         decodedResult: { reserve0: 5000000000000000000000n, reserve1: 10000000000000000000000n },
       }),
@@ -63,7 +65,9 @@ describe('GET /pool-info (Superhero)', () => {
 
     const mockSuperhero = {
       aeternity: { sdk: {} },
-      getToken: jest.fn().mockResolvedValue({ address: MOCK_TOKEN0, symbol: 'TBASE', decimals: 18 }),
+      getToken: jest.fn()
+        .mockResolvedValueOnce({ address: MOCK_TOKEN0, symbol: 'TBASE', decimals: 18 })
+        .mockResolvedValueOnce({ address: MOCK_TOKEN1, symbol: 'WAE', decimals: 18 }),
     };
     (Superhero.getInstance as jest.Mock).mockResolvedValue(mockSuperhero);
 
@@ -80,6 +84,7 @@ describe('GET /pool-info (Superhero)', () => {
     const body = JSON.parse(response.body);
     expect(body).toHaveProperty('address', MOCK_POOL_ADDRESS);
     expect(body).toHaveProperty('baseTokenAddress', MOCK_TOKEN0);
+    expect(body).toHaveProperty('quoteTokenAddress', MOCK_TOKEN1);
     expect(body).toHaveProperty('feePct', 0.3);
     expect(body).toHaveProperty('price');
     expect(body).toHaveProperty('baseTokenAmount');

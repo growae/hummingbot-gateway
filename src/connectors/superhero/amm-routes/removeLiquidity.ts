@@ -79,9 +79,17 @@ export const removeLiquidityRoute: FastifyPluginAsync = async (fastify) => {
           throw fastify.httpErrors.badRequest('Calculated LP amount to burn is zero');
         }
 
-        const { decodedResult: token0 } = await pair.token0();
-        const { decodedResult: reserves } = await pair.get_reserves();
-        const { decodedResult: totalSupplyRaw } = await pair.total_supply();
+        const [
+          { decodedResult: token0 },
+          { decodedResult: token1 },
+          { decodedResult: reserves },
+          { decodedResult: totalSupplyRaw },
+        ] = await Promise.all([
+          pair.token0(),
+          pair.token1(),
+          pair.get_reserves(),
+          pair.total_supply(),
+        ]);
         const totalSupply = BigInt(totalSupplyRaw);
         const reserve0 = BigInt(reserves.reserve0);
         const reserve1 = BigInt(reserves.reserve1);
@@ -94,23 +102,31 @@ export const removeLiquidityRoute: FastifyPluginAsync = async (fastify) => {
         const ownerAddress = account.address;
 
         const token0IsAe = token0 === waeAddress;
+        const token1IsAe = token1 === waeAddress;
 
         let result: any;
         if (token0IsAe) {
+          result = await router.remove_liquidity_ae(
+            token1, lpToBurn, minB, minA, ownerAddress, deadline,
+          );
+        } else if (token1IsAe) {
           result = await router.remove_liquidity_ae(
             token0, lpToBurn, minA, minB, ownerAddress, deadline,
           );
         } else {
           result = await router.remove_liquidity(
-            token0, token0, lpToBurn, minA, minB, ownerAddress, deadline,
+            token0, token1, lpToBurn, minA, minB, ownerAddress, deadline,
           );
         }
 
         const txHash = extractTxHash(result);
 
-        const token0Info = await superhero.getToken(token0);
+        const [token0Info, token1Info] = await Promise.all([
+          superhero.getToken(token0),
+          superhero.getToken(token1),
+        ]);
         const token0Decimals = token0Info?.decimals ?? 18;
-        const token1Decimals = 18;
+        const token1Decimals = token1Info?.decimals ?? 18;
 
         const expectedA = (lpToBurn * reserve0) / totalSupply;
         const expectedB = (lpToBurn * reserve1) / totalSupply;

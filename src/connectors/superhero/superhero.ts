@@ -49,7 +49,7 @@ export class Superhero {
 
   public async init(): Promise<void> {
     await this.getContracts();
-    logger.info(`Superhero DEX connector initialized on ${this.network}`);
+    logger.info(`📡 Aeternity Superhero DEX connector initialized on ${this.network}`);
   }
 
   public async getContracts(sdk?: AeSdk): Promise<DexContracts> {

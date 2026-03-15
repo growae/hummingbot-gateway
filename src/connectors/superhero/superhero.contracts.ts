@@ -107,6 +107,7 @@ export interface Aex9ContractApi extends ContractMethodsBase {
 
 export interface PairContractApi extends ContractMethodsBase {
   token0: () => ContractCallResult<string>;
+  token1: () => ContractCallResult<string>;
   get_reserves: () => ContractCallResult<{ reserve0: bigint | string; reserve1: bigint | string }>;
   allowance: (params: { from_account: string; for_account: string }) => ContractCallResult<bigint | null | undefined>;
   create_allowance: (forAccount: string, value: bigint) => ContractTxResult;

@@ -36,21 +36,19 @@ export const poolInfoRoute: FastifyPluginAsync = async (fastify) => {
           address: poolAddress,
         });
 
-        const { decodedResult: token0 } = await pair.token0();
-        const { decodedResult: reserves } = await pair.get_reserves();
+        const [{ decodedResult: token0 }, { decodedResult: token1 }, { decodedResult: reserves }] =
+          await Promise.all([pair.token0(), pair.token1(), pair.get_reserves()]);
+
         const reserve0 = BigInt(reserves.reserve0);
         const reserve1 = BigInt(reserves.reserve1);
 
-        const token0Info = await superhero.getToken(token0);
-        const token1Addr = token0 === poolAddress ? token0 : '';
+        const [token0Info, token1Info] = await Promise.all([
+          superhero.getToken(token0),
+          superhero.getToken(token1),
+        ]);
 
-        let token1 = '';
-        // We need to determine token1 from pool context. The factory's get_pair
-        // returns the pair given two tokens, but from the pair itself we only get token0.
-        // We'll derive token1 from the pool info: token0 and the reserves.
-        // For simplicity, we report token0 as base and the other as quote.
         const token0Decimals = token0Info?.decimals ?? 18;
-        const token1Decimals = 18; // default
+        const token1Decimals = token1Info?.decimals ?? 18;
 
         const baseTokenAmount = fromAettos(reserve0, token0Decimals);
         const quoteTokenAmount = fromAettos(reserve1, token1Decimals);
@@ -59,7 +57,7 @@ export const poolInfoRoute: FastifyPluginAsync = async (fastify) => {
         return {
           address: poolAddress,
           baseTokenAddress: token0,
-          quoteTokenAddress: token1 || 'unknown',
+          quoteTokenAddress: token1,
           feePct: 0.3,
           price,
           baseTokenAmount,
