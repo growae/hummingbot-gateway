@@ -313,9 +313,25 @@ export class ConfigManagerV2 {
   public static getInstance(): ConfigManagerV2 {
     if (!ConfigManagerV2._instance) {
       const rootPath = path.join(ConfigDir, 'root.yml');
+      const templateRootPath = path.join(ConfigTemplatesDir, 'root.yml');
       if (!fs.existsSync(rootPath)) {
-        // copy from template
-        fs.copyFileSync(path.join(ConfigTemplatesDir, 'root.yml'), rootPath);
+        fs.copyFileSync(templateRootPath, rootPath);
+      } else if (fs.existsSync(templateRootPath)) {
+        // Merge any new namespaces from the template into the existing root.yml
+        const existing = yaml.load(fs.readFileSync(rootPath, 'utf8')) as any;
+        const template = yaml.load(fs.readFileSync(templateRootPath, 'utf8')) as any;
+        if (existing?.configurations && template?.configurations) {
+          let modified = false;
+          for (const key of Object.keys(template.configurations)) {
+            if (!(key in existing.configurations)) {
+              existing.configurations[key] = template.configurations[key];
+              modified = true;
+            }
+          }
+          if (modified) {
+            fs.writeFileSync(rootPath, yaml.dump(existing, { lineWidth: -1 }));
+          }
+        }
       }
 
       // Copy all template directories recursively

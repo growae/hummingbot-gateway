@@ -92,6 +92,20 @@ configurations:
     configurationPath: connectors/pancakeswap-sol.yml
     schemaPath: pancakeswap-sol-schema.json
 
+  # Aeternity chain
+  $namespace aeternity:
+    configurationPath: chains/aeternity.yml
+    schemaPath: aeternity-chain-schema.json
+
+  $namespace aeternity-mainnet:
+    configurationPath: chains/aeternity/mainnet.yml
+    schemaPath: aeternity-network-schema.json
+
+  # Superhero DEX connector
+  $namespace superhero:
+    configurationPath: connectors/superhero.yml
+    schemaPath: superhero-schema.json
+
   # API Keys (centralized)
   $namespace apiKeys:
     configurationPath: apiKeys.yml
