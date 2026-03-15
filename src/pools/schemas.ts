@@ -76,14 +76,14 @@ export const PoolAddRequestSchema = Type.Object({
     description: 'Quote token symbol',
     examples: ['USDC', 'USDT'],
   }),
-  baseTokenAddress: Type.String({
-    description: 'Base token contract address',
+  baseTokenAddress: Type.Optional(Type.String({
+    description: 'Base token contract address (resolved from pool if not provided)',
     examples: ['So11111111111111111111111111111111111111112'],
-  }),
-  quoteTokenAddress: Type.String({
-    description: 'Quote token contract address',
+  })),
+  quoteTokenAddress: Type.Optional(Type.String({
+    description: 'Quote token contract address (resolved from pool if not provided)',
     examples: ['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'],
-  }),
+  })),
   feePct: Type.Optional(
     Type.Number({
       description: 'Pool fee percentage (optional - fetched from pool-info if not provided)',
