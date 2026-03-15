@@ -1,0 +1,5 @@
+nodeURL: https://mainnet.aeternity.io
+compilerURL: https://compiler.aepps.com
+nativeCurrencySymbol: AE
+nativeCurrencyDecimals: 18
+swapProvider: superhero/amm

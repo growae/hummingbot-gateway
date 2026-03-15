@@ -13,6 +13,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 // Internal dependencies
 
 // Routes
+import { aeternityRoutes } from './chains/aeternity/aeternity.routes';
 import { ethereumRoutes } from './chains/ethereum/ethereum.routes';
 import { solanaRoutes } from './chains/solana/solana.routes';
 import { configRoutes } from './config/config.routes';
@@ -23,6 +24,7 @@ import { orcaRoutes } from './connectors/orca/orca.routes';
 import { pancakeswapRoutes } from './connectors/pancakeswap/pancakeswap.routes';
 import { pancakeswapSolRoutes } from './connectors/pancakeswap-sol/pancakeswap-sol.routes';
 import { raydiumRoutes } from './connectors/raydium/raydium.routes';
+import { superheroRoutes } from './connectors/superhero/superhero.routes';
 import { uniswapRoutes } from './connectors/uniswap/uniswap.routes';
 import { getHttpsOptions } from './https';
 import { poolRoutes } from './pools/pools.routes';
@@ -238,6 +240,7 @@ const configureGatewayServer = () => {
     app.register(tradingClmmRoutes, { prefix: '/trading/clmm' });
 
     // Register chain routes
+    app.register(aeternityRoutes, { prefix: '/chains/aeternity' });
     app.register(solanaRoutes, { prefix: '/chains/solana' });
     app.register(ethereumRoutes, { prefix: '/chains/ethereum' });
 
@@ -277,6 +280,9 @@ const configureGatewayServer = () => {
 
     // PancakeSwap Solana routes
     app.register(pancakeswapSolRoutes, { prefix: '/connectors/pancakeswap-sol' });
+
+    // Superhero DEX routes
+    app.register(superheroRoutes.amm, { prefix: '/connectors/superhero/amm' });
   };
 
   // Register routes on main server
