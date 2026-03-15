@@ -1,7 +1,8 @@
 import { Type, Static } from '@sinclair/typebox';
 import { FastifyPluginAsync } from 'fastify';
 
-// Solana connector imports
+// Chain config imports
+import { getAeternityChainConfig, getAeternityNetworkConfig } from '../../chains/aeternity/aeternity.config';
 import { getEthereumChainConfig, getEthereumNetworkConfig } from '../../chains/ethereum/ethereum.config';
 import { getSolanaChainConfig, getSolanaNetworkConfig } from '../../chains/solana/solana.config';
 import { executeSwap as zeroXRouterExecuteSwap } from '../../connectors/0x/router-routes/executeSwap';
@@ -20,20 +21,27 @@ import { executeSwap as uniswapAmmExecuteSwap } from '../../connectors/uniswap/a
 import { executeSwap as uniswapClmmExecuteSwap } from '../../connectors/uniswap/clmm-routes/executeSwap';
 import { executeSwap as uniswapRouterExecuteSwap } from '../../connectors/uniswap/router-routes/executeSwap';
 
+// Aeternity connector imports
+import { executeSuperheroAmmSwap } from '../../connectors/superhero/amm-routes/executeSwap';
+
 // Config and utilities
 import { ChainExecuteSwapResponseSchema } from '../../schemas/chain-schema';
 import { httpErrors } from '../../services/error-handler';
 import { logger } from '../../services/logger';
 import { PoolService } from '../../services/pool-service';
 
-// Get default wallet from Solana config, fallback to Ethereum if Solana doesn't exist
 let defaultWallet: string;
 try {
   const solanaChainConfig = getSolanaChainConfig();
   defaultWallet = solanaChainConfig.defaultWallet;
 } catch {
-  const ethereumChainConfig = getEthereumChainConfig();
-  defaultWallet = ethereumChainConfig.defaultWallet;
+  try {
+    const ethereumChainConfig = getEthereumChainConfig();
+    defaultWallet = ethereumChainConfig.defaultWallet;
+  } catch {
+    const aeternityChainConfig = getAeternityChainConfig();
+    defaultWallet = aeternityChainConfig.defaultWallet;
+  }
 }
 
 /**
@@ -308,6 +316,42 @@ async function executeEthereumSwap(
 }
 
 /**
+ * Execute an Aeternity swap via Superhero DEX
+ */
+async function executeAeternitySwap(
+  network: string,
+  walletAddress: string,
+  baseToken: string,
+  quoteToken: string,
+  amount: number,
+  side: 'BUY' | 'SELL',
+  slippagePct?: number,
+  connector?: string,
+): Promise<any> {
+  try {
+    const networkConfig = getAeternityNetworkConfig(network);
+
+    const swapProvider = connector || networkConfig.swapProvider || 'superhero/amm';
+
+    logger.info(
+      `Using swap provider: ${swapProvider} for network: ${network}${connector ? ' (explicit)' : ' (from config)'}`,
+    );
+
+    if (swapProvider === 'superhero/amm') {
+      return await executeSuperheroAmmSwap(network, walletAddress, baseToken, quoteToken, amount, side, slippagePct);
+    }
+
+    throw httpErrors.badRequest(`Unsupported swap provider: ${swapProvider}`);
+  } catch (error) {
+    logger.error(`Error executing swap: ${error.message}`);
+    if (error.statusCode) {
+      throw error;
+    }
+    throw httpErrors.internalServerError(`Failed to execute swap: ${error.message}`);
+  }
+}
+
+/**
  * Execute a swap across any supported chain
  */
 export async function executeUnifiedSwap(
@@ -332,6 +376,9 @@ export async function executeUnifiedSwap(
 
     case 'solana':
       return executeSolanaSwap(network, walletAddress, baseToken, quoteToken, amount, side, slippagePct, connector);
+
+    case 'aeternity':
+      return executeAeternitySwap(network, walletAddress, baseToken, quoteToken, amount, side, slippagePct, connector);
 
     default:
       throw httpErrors.badRequest(`Unsupported chain: ${chain}`);

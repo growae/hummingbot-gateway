@@ -122,6 +122,9 @@ export async function getUnifiedPoolInfo(
     case 'solana':
       return getSolanaPoolInfo(fastify, connector, network, poolAddress);
 
+    case 'aeternity':
+      throw fastify.httpErrors.badRequest('CLMM is not supported on Aeternity. Use the AMM swap endpoints instead (/connector/superhero).');
+
     default:
       throw fastify.httpErrors.badRequest(`Unsupported chain: ${chain}`);
   }

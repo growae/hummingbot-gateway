@@ -233,6 +233,9 @@ export async function getUnifiedQuotePosition(
         slippagePct,
       );
 
+    case 'aeternity':
+      throw httpErrors.badRequest('CLMM is not supported on Aeternity. Use the AMM swap endpoints instead (/connector/superhero).');
+
     default:
       throw httpErrors.badRequest(`Unsupported chain: ${chain}`);
   }

@@ -36,7 +36,7 @@ export const GetWalletsQuerySchema = Type.Object({
 export const GetWalletResponseSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain name',
-    examples: ['solana', 'ethereum'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   walletAddresses: Type.Array(WalletAddressSchema, {
     description: 'List of regular wallet addresses with private keys',

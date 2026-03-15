@@ -45,6 +45,8 @@ async function addHardwareWallet(
       validatedAddress = Ethereum.validateAddress(req.address);
     } else if (req.chain.toLowerCase() === 'solana') {
       validatedAddress = Solana.validateAddress(req.address);
+    } else if (req.chain.toLowerCase() === 'aeternity') {
+      throw new Error('Ledger hardware wallets are not supported for Aeternity');
     } else {
       throw new Error(`Unsupported chain: ${req.chain}`);
     }

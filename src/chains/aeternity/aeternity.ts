@@ -138,6 +138,21 @@ export class Aeternity {
     }
   }
 
+  public async getToken(addressOrSymbol: string): Promise<AeternityTokenInfo | undefined> {
+    if (addressOrSymbol === 'AE' || addressOrSymbol === this.nativeTokenSymbol) {
+      return {
+        address: 'AE',
+        name: 'Aeternity',
+        symbol: 'AE',
+        decimals: this.nativeTokenDecimals,
+      };
+    }
+    if (addressOrSymbol.startsWith('ct_')) {
+      return this.getTokenInfo(addressOrSymbol);
+    }
+    return undefined;
+  }
+
   public async getTokenInfo(tokenAddress: string): Promise<AeternityTokenInfo | undefined> {
     try {
       const token = await Contract.initialize<ContractMethodsBase>({

@@ -228,6 +228,14 @@ export class TokenService {
         }
         break;
 
+      case SupportedChain.AETERNITY: {
+        const aeAddressRegex = /^(ct|ak)_[1-9A-HJ-NP-Za-km-z]{48,56}$/;
+        if (!aeAddressRegex.test(token.address)) {
+          throw new Error(`Invalid Aeternity token address: expected ct_ or ak_ prefix`);
+        }
+        break;
+      }
+
       default:
         throw new Error(`Unsupported chain for validation: ${chain}`);
     }

@@ -8,7 +8,7 @@ import { ConfigManagerV2 } from '../services/config-manager-v2';
 import { logger } from '../services/logger';
 
 // Known blockchain chains for chain-network parsing
-const KNOWN_CHAINS = ['solana', 'ethereum'];
+const KNOWN_CHAINS = ['solana', 'ethereum', 'aeternity'];
 
 /**
  * Parse a chain-network namespace format into chain and network components.

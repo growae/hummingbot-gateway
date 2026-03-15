@@ -98,6 +98,8 @@ export class PoolService {
         return SupportedChain.ETHEREUM;
       case 'solana':
         return SupportedChain.SOLANA;
+      case 'aeternity':
+        return SupportedChain.AETERNITY;
       default:
         throw new Error(`Unsupported chain '${connectorInfo.chain}' for connector: ${connector}`);
     }
@@ -308,6 +310,17 @@ export class PoolService {
       }
       if (!ethers.utils.isAddress(pool.quoteTokenAddress)) {
         throw new Error('Invalid Ethereum quote token address');
+      }
+    } else if (chain === SupportedChain.AETERNITY) {
+      const aeAddressRegex = /^(ct|ak)_[1-9A-HJ-NP-Za-km-z]{48,56}$/;
+      if (!aeAddressRegex.test(pool.address)) {
+        throw new Error('Invalid Aeternity pool address (expected ct_ prefix)');
+      }
+      if (!aeAddressRegex.test(pool.baseTokenAddress)) {
+        throw new Error('Invalid Aeternity base token address (expected ct_ or ak_ prefix)');
+      }
+      if (!aeAddressRegex.test(pool.quoteTokenAddress)) {
+        throw new Error('Invalid Aeternity quote token address (expected ct_ or ak_ prefix)');
       }
     }
 

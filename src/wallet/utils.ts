@@ -570,6 +570,8 @@ export async function sendTransaction(
 
   if (req.chain.toLowerCase() === 'solana') {
     return await sendSolanaTransaction(fastify, req, validatedFromAddress, validatedToAddress);
+  } else if (req.chain.toLowerCase() === 'aeternity') {
+    return await sendAeternityTransaction(fastify, req, validatedFromAddress, validatedToAddress);
   } else {
     return await sendEthereumTransaction(fastify, req, validatedFromAddress, validatedToAddress);
   }
@@ -730,6 +732,48 @@ async function sendEthereumTransaction(
     };
   } catch (error: unknown) {
     logger.error(`Ethereum send failed: ${(error as Error).message}`);
+    throw fastify.httpErrors.internalServerError(`Transaction failed: ${(error as Error).message}`);
+  }
+}
+
+/**
+ * Send an Aeternity transaction (native AE transfer)
+ */
+async function sendAeternityTransaction(
+  fastify: FastifyInstance,
+  req: SendTransactionRequest,
+  fromAddress: string,
+  toAddress: string,
+): Promise<SendTransactionResponse> {
+  const aeternity = await Aeternity.getInstance(req.network);
+  const account = await aeternity.getWallet(fromAddress);
+  const amount = parseFloat(req.amount);
+
+  if (isNaN(amount) || amount <= 0) {
+    throw fastify.httpErrors.badRequest('Invalid amount');
+  }
+
+  if (req.token && req.token.toUpperCase() !== 'AE') {
+    throw fastify.httpErrors.badRequest('Aeternity token transfers are not supported via this endpoint. Use the DEX swap instead.');
+  }
+
+  try {
+    const sdk = aeternity.getSdkWithAccount(account);
+    const amountAettos = Math.floor(amount * 1e18).toString();
+
+    const result = await sdk.spend(amountAettos, toAddress as any, { onAccount: account });
+    const txHash = result?.hash || '';
+
+    return {
+      signature: txHash,
+      status: 1,
+      amount: req.amount,
+      token: 'AE',
+      toAddress,
+      fee: 0,
+    };
+  } catch (error: unknown) {
+    logger.error(`Aeternity send failed: ${(error as Error).message}`);
     throw fastify.httpErrors.internalServerError(`Transaction failed: ${(error as Error).message}`);
   }
 }
