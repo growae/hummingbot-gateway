@@ -1,4 +1,5 @@
 import { AeSdk, Node, Contract, type ContractMethodsBase, Encoded, MemoryAccount } from '@aeternity/aepp-sdk';
+import axios from 'axios';
 import crypto from 'crypto';
 import fse from 'fs-extra';
 
@@ -179,7 +180,7 @@ export class Aeternity {
     const nativeBalance = await this.getBalance(address);
     balances[this.nativeTokenSymbol] = Number(nativeBalance) / Math.pow(10, this.nativeTokenDecimals);
 
-    if (tokens) {
+    if (tokens && tokens.length > 0) {
       for (const tokenAddr of tokens) {
         if (tokenAddr === this.nativeTokenSymbol || tokenAddr === 'AE') continue;
         try {
@@ -192,6 +193,27 @@ export class Aeternity {
           logger.warn(`Error getting balance for ${tokenAddr}: ${err.message}`);
           balances[tokenAddr] = 0;
         }
+      }
+    } else {
+      // Auto-discover all AEX-9 token balances via middleware
+      try {
+        const mdwUrl = `${this.nodeUrl.replace(/\/$/, '')}/mdw/v3/accounts/${address}/aex9/balances`;
+        logger.info(`Fetching AEX-9 balances from middleware: ${mdwUrl}`);
+        const { data } = await axios.get(mdwUrl, { timeout: 10000 });
+
+        if (data?.data && Array.isArray(data.data)) {
+          for (const entry of data.data) {
+            const symbol = entry.token_symbol || entry.contract_id;
+            const decimals = typeof entry.decimals === 'number' ? entry.decimals : 18;
+            const amount = Number(entry.amount ?? 0) / Math.pow(10, decimals);
+            if (amount > 0) {
+              balances[symbol] = amount;
+            }
+          }
+          logger.info(`Found ${data.data.length} AEX-9 token(s) for ${address}`);
+        }
+      } catch (err: any) {
+        logger.warn(`Middleware AEX-9 balance lookup failed: ${err.message}`);
       }
     }
 
