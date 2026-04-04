@@ -69,10 +69,10 @@ export async function getSuperheroAmmQuote(
     maxAmountIn = fromAettos(addSlippage(rawAmountIn, slippagePct), quoteTokenInfo.decimals);
   }
 
-  const price = amountOut / amountIn;
+  const price = exactIn ? amountOut / amountIn : amountIn / amountOut;
 
   const midPrice = Number(quoteReserve) / Number(baseReserve);
-  const executionPrice = exactIn ? amountOut / amountIn : amountIn / amountOut;
+  const executionPrice = price;
   const priceImpactPct = Math.abs((executionPrice - midPrice) / midPrice) * 100;
 
   return {

@@ -39,16 +39,20 @@ export const pollRoute: FastifyPluginAsync = async (fastify) => {
           };
         }
 
-        const txBlock = txData.blockHeight ?? null;
+        const txBlock = txData.blockHeight ? Number(txData.blockHeight) : null;
         const txStatus = txBlock && txBlock > 0 ? 1 : 0;
 
+        const safeTxData = JSON.parse(JSON.stringify(txData, (_key, value) =>
+          typeof value === 'bigint' ? Number(value) : value
+        ));
+
         return {
-          currentBlock,
+          currentBlock: Number(currentBlock),
           signature,
           txBlock,
           txStatus,
           fee: null,
-          txData,
+          txData: safeTxData,
         };
       } catch (error: any) {
         logger.error(`Error polling Aeternity transaction: ${error.message}`);
