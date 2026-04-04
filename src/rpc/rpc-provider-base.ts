@@ -12,9 +12,9 @@ export interface RPCProviderConfig {
  * Supports both Solana and Ethereum networks
  */
 export interface NetworkInfo {
-  chain: 'solana' | 'ethereum';
+  chain: 'solana' | 'ethereum' | 'aeternity';
   network: string;
-  chainId: number; // Chain ID (101 for Solana mainnet, 1 for Ethereum mainnet, etc.)
+  chainId: number;
 }
 
 /**

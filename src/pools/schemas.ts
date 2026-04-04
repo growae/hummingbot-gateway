@@ -5,8 +5,8 @@ import { ConfigManagerV2 } from '../services/config-manager-v2';
 // Pool list request
 export const PoolListRequestSchema = Type.Object({
   connector: Type.String({
-    description: 'Connector (raydium, meteora, uniswap, orca)',
-    examples: ['raydium', 'meteora', 'uniswap', 'orca'],
+    description: 'Connector (raydium, meteora, uniswap, orca, superhero)',
+    examples: ['raydium', 'meteora', 'uniswap', 'orca', 'superhero'],
   }),
   network: Type.Optional(
     Type.String({
@@ -52,8 +52,8 @@ export const PoolListResponseSchema = Type.Array(PoolTemplateSchema);
 // Add pool request
 export const PoolAddRequestSchema = Type.Object({
   connector: Type.String({
-    description: 'Connector (raydium, meteora, uniswap, orca)',
-    examples: ['raydium', 'meteora', 'uniswap', 'orca'],
+    description: 'Connector (raydium, meteora, uniswap, orca, superhero)',
+    examples: ['raydium', 'meteora', 'uniswap', 'orca', 'superhero'],
   }),
   type: Type.String({
     description: 'Pool type',
@@ -76,14 +76,14 @@ export const PoolAddRequestSchema = Type.Object({
     description: 'Quote token symbol',
     examples: ['USDC', 'USDT'],
   }),
-  baseTokenAddress: Type.String({
-    description: 'Base token contract address',
+  baseTokenAddress: Type.Optional(Type.String({
+    description: 'Base token contract address (resolved from pool if not provided)',
     examples: ['So11111111111111111111111111111111111111112'],
-  }),
-  quoteTokenAddress: Type.String({
-    description: 'Quote token contract address',
+  })),
+  quoteTokenAddress: Type.Optional(Type.String({
+    description: 'Quote token contract address (resolved from pool if not provided)',
     examples: ['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'],
-  }),
+  })),
   feePct: Type.Optional(
     Type.Number({
       description: 'Pool fee percentage (optional - fetched from pool-info if not provided)',
@@ -97,8 +97,8 @@ export const PoolAddRequestSchema = Type.Object({
 // Get pool request
 export const GetPoolRequestSchema = Type.Object({
   connector: Type.String({
-    description: 'Connector (raydium, meteora, uniswap, orca)',
-    examples: ['raydium', 'meteora', 'uniswap', 'orca'],
+    description: 'Connector (raydium, meteora, uniswap, orca, superhero)',
+    examples: ['raydium', 'meteora', 'uniswap', 'orca', 'superhero'],
   }),
   network: Type.String({
     description: 'Network name (mainnet, mainnet-beta, etc)',

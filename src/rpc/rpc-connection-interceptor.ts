@@ -42,7 +42,7 @@ function is429Error(error: any): boolean {
 /**
  * Create error message based on chain type
  */
-function createRateLimitErrorMessage(rpcUrl: string, chainType: 'solana' | 'ethereum'): string {
+function createRateLimitErrorMessage(rpcUrl: string, chainType: 'solana' | 'ethereum' | 'aeternity'): string {
   const redactedUrl = redactUrl(rpcUrl);
 
   if (chainType === 'solana') {
@@ -50,8 +50,12 @@ function createRateLimitErrorMessage(rpcUrl: string, chainType: 'solana' | 'ethe
       `Solana RPC rate limit exceeded. Your current RPC endpoint (${redactedUrl}) has reached its rate limit. ` +
       `To fix: Add an RPC provider API key to conf/apiKeys.yml and set 'rpcProvider' in conf/chains/solana.yml`
     );
+  } else if (chainType === 'aeternity') {
+    return (
+      `Aeternity RPC rate limit exceeded. Your current RPC endpoint (${redactedUrl}) has reached its rate limit. ` +
+      `To fix: Update 'nodeURL' in conf/chains/aeternity/mainnet.yml`
+    );
   } else {
-    // Ethereum
     return (
       `Ethereum RPC rate limit exceeded. Your current RPC endpoint (${redactedUrl}) has reached its rate limit. ` +
       `To fix: Add an RPC provider API key to conf/apiKeys.yml and set 'rpcProvider' in conf/chains/ethereum.yml`

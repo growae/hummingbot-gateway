@@ -4,6 +4,7 @@
 
 import { FastifyInstance } from 'fastify';
 
+import { Aeternity } from '../chains/aeternity/aeternity';
 import { Ethereum } from '../chains/ethereum/ethereum';
 import { Solana } from '../chains/solana/solana';
 import { connectorsConfig } from '../config/routes/getConnectors';
@@ -20,12 +21,12 @@ interface PoolInfoResult {
 /**
  * Get chain type for a connector from config
  */
-function getConnectorChain(connector: string): 'solana' | 'ethereum' | null {
+function getConnectorChain(connector: string): 'solana' | 'ethereum' | 'aeternity' | null {
   const config = connectorsConfig.find((c) => c.name === connector);
   if (!config) {
     return null;
   }
-  return config.chain as 'solana' | 'ethereum';
+  return config.chain as 'solana' | 'ethereum' | 'aeternity';
 }
 
 /**
@@ -146,6 +147,10 @@ export async function fetchPoolInfo(
           feePct: feePct,
         };
       }
+    } else if (chain === 'aeternity') {
+      const { Superhero } = await import(`../connectors/superhero/superhero`);
+      const instance = await Superhero.getInstance(network);
+      poolInfo = await instance.getPoolInfoByAddress(poolAddress);
     } else {
       logger.error(`Unsupported chain: ${chain} for connector: ${connector}`);
       return null;
@@ -184,8 +189,14 @@ export async function resolveTokenSymbols(
       throw new Error(`Unsupported connector: ${connector}`);
     }
 
-    // Get chain instance and tokens from local list only
-    const chain = chainType === 'solana' ? await Solana.getInstance(network) : await Ethereum.getInstance(network);
+    let chain;
+    if (chainType === 'solana') {
+      chain = await Solana.getInstance(network);
+    } else if (chainType === 'aeternity') {
+      chain = await Aeternity.getInstance(network);
+    } else {
+      chain = await Ethereum.getInstance(network);
+    }
 
     // Use local token list only - don't fetch from blockchain
     const baseToken = await chain.getToken(baseTokenAddress);

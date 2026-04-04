@@ -60,9 +60,9 @@ export interface PoolAddRequest {
   type: 'amm' | 'clmm';
   network: string;
   address: string;
-  baseSymbol: string; // Required
-  quoteSymbol: string; // Required
-  baseTokenAddress: string;
-  quoteTokenAddress: string;
+  baseSymbol: string;
+  quoteSymbol: string;
+  baseTokenAddress?: string;
+  quoteTokenAddress?: string;
   feePct?: number;
 }

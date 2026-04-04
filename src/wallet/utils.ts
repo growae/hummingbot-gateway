@@ -12,6 +12,7 @@ import { BigNumber, Wallet, utils } from 'ethers';
 import { FastifyInstance } from 'fastify';
 import fse from 'fs-extra';
 
+import { Aeternity } from '../chains/aeternity/aeternity';
 import { Ethereum } from '../chains/ethereum/ethereum';
 import { Solana } from '../chains/solana/solana';
 import { updateDefaultWallet } from '../config/utils';
@@ -60,7 +61,7 @@ export function validateChainName(chain: string): boolean {
   } catch (error) {
     // Fallback to hardcoded list if there's an error
     logger.warn(`Failed to get supported chains: ${error.message}. Using fallback list.`);
-    return ['ethereum', 'solana'].includes(chain.toLowerCase());
+    return ['ethereum', 'solana', 'aeternity'].includes(chain.toLowerCase());
   }
 }
 
@@ -128,6 +129,12 @@ export async function addWallet(fastify: FastifyInstance, req: AddWalletRequest)
       // Further validate Solana address
       address = Solana.validateAddress(address);
       encryptedPrivateKey = await connection.encrypt(req.privateKey, walletKey);
+    } else if (connection instanceof Aeternity) {
+      const { MemoryAccount: AeMemoryAccount } = await import('@aeternity/aepp-sdk');
+      const account = new AeMemoryAccount(req.privateKey as any);
+      address = account.address;
+      address = Aeternity.validateAddress(address);
+      encryptedPrivateKey = await connection.encrypt(req.privateKey, walletKey);
     }
 
     if (address === undefined || encryptedPrivateKey === undefined) {
@@ -172,8 +179,9 @@ export async function removeWallet(fastify: FastifyInstance, req: RemoveWalletRe
       validatedAddress = Ethereum.validateAddress(req.address);
     } else if (req.chain.toLowerCase() === 'solana') {
       validatedAddress = Solana.validateAddress(req.address);
+    } else if (req.chain.toLowerCase() === 'aeternity') {
+      validatedAddress = Aeternity.validateAddress(req.address);
     } else {
-      // This should not happen due to validateChainName check, but just in case
       throw new Error(`Unsupported chain: ${req.chain}`);
     }
 
@@ -205,6 +213,8 @@ export async function signMessage(fastify: FastifyInstance, req: SignMessageRequ
       validatedAddress = Ethereum.validateAddress(req.address);
     } else if (req.chain.toLowerCase() === 'solana') {
       validatedAddress = Solana.validateAddress(req.address);
+    } else if (req.chain.toLowerCase() === 'aeternity') {
+      validatedAddress = Aeternity.validateAddress(req.address);
     } else {
       throw new Error(`Unsupported chain: ${req.chain}`);
     }
@@ -263,7 +273,7 @@ export async function getWallets(
     await mkdirIfDoesNotExist(walletPath);
 
     // Get only valid chain directories
-    const validChains = ['ethereum', 'solana'];
+    const validChains = ['ethereum', 'solana', 'aeternity'];
     const allDirs = await getDirectories(walletPath);
     const chains = allDirs.filter((dir) => validChains.includes(dir.toLowerCase()));
 
@@ -280,11 +290,11 @@ export async function getWallets(
         .filter((address) => {
           try {
             if (chain.toLowerCase() === 'ethereum') {
-              // Basic Ethereum address validation (0x + 40 hex chars)
               return /^0x[a-fA-F0-9]{40}$/i.test(address);
             } else if (chain.toLowerCase() === 'solana') {
-              // Basic Solana address length check
               return address.length >= 32 && address.length <= 44;
+            } else if (chain.toLowerCase() === 'aeternity') {
+              return address.startsWith('ak_') && address.length >= 35;
             }
             return false;
           } catch {
@@ -390,7 +400,6 @@ export async function createWallet(fastify: FastifyInstance, req: CreateWalletRe
 
   try {
     if (req.chain.toLowerCase() === 'solana') {
-      // Generate Solana keypair
       const keypair = Keypair.generate();
       address = keypair.publicKey.toBase58();
       privateKey = bs58.encode(keypair.secretKey);
@@ -399,13 +408,19 @@ export async function createWallet(fastify: FastifyInstance, req: CreateWalletRe
       const connection = await getInitializedChain<Solana>(req.chain, network);
       encryptedPrivateKey = await connection.encrypt(privateKey, walletKey);
     } else if (req.chain.toLowerCase() === 'ethereum') {
-      // Generate Ethereum wallet
       const wallet = Wallet.createRandom();
       address = wallet.address;
       privateKey = wallet.privateKey;
 
-      // Get Ethereum connection for encryption
       const connection = await getInitializedChain<Ethereum>(req.chain, network);
+      encryptedPrivateKey = await connection.encrypt(privateKey, walletKey);
+    } else if (req.chain.toLowerCase() === 'aeternity') {
+      const { MemoryAccount: AeMemoryAccount } = await import('@aeternity/aepp-sdk');
+      const account = AeMemoryAccount.generate();
+      address = account.address;
+      privateKey = account.secretKey;
+
+      const connection = await getInitializedChain<Aeternity>(req.chain, network);
       encryptedPrivateKey = await connection.encrypt(privateKey, walletKey);
     } else {
       throw new Error(`Unsupported chain: ${req.chain}`);
@@ -466,6 +481,8 @@ export async function showPrivateKey(
     validatedAddress = Ethereum.validateAddress(req.address);
   } else if (req.chain.toLowerCase() === 'solana') {
     validatedAddress = Solana.validateAddress(req.address);
+  } else if (req.chain.toLowerCase() === 'aeternity') {
+    validatedAddress = Aeternity.validateAddress(req.address);
   } else {
     throw fastify.httpErrors.badRequest(`Unsupported chain: ${req.chain}`);
   }
@@ -492,6 +509,9 @@ export async function showPrivateKey(
     if (req.chain.toLowerCase() === 'solana') {
       const solana = await Solana.getInstance(network);
       privateKey = await solana.decrypt(encryptedPrivateKey, configuredPassphrase);
+    } else if (req.chain.toLowerCase() === 'aeternity') {
+      const aeternity = await Aeternity.getInstance(network);
+      privateKey = await aeternity.decrypt(encryptedPrivateKey, configuredPassphrase);
     } else {
       const ethereum = await Ethereum.getInstance(network);
       const wallet = await ethereum.decrypt(encryptedPrivateKey, configuredPassphrase);
@@ -535,6 +555,9 @@ export async function sendTransaction(
   } else if (req.chain.toLowerCase() === 'solana') {
     validatedFromAddress = Solana.validateAddress(req.address);
     validatedToAddress = Solana.validateAddress(req.toAddress);
+  } else if (req.chain.toLowerCase() === 'aeternity') {
+    validatedFromAddress = Aeternity.validateAddress(req.address);
+    validatedToAddress = Aeternity.validateAddress(req.toAddress);
   } else {
     throw fastify.httpErrors.badRequest(`Unsupported chain: ${req.chain}`);
   }
@@ -547,6 +570,8 @@ export async function sendTransaction(
 
   if (req.chain.toLowerCase() === 'solana') {
     return await sendSolanaTransaction(fastify, req, validatedFromAddress, validatedToAddress);
+  } else if (req.chain.toLowerCase() === 'aeternity') {
+    return await sendAeternityTransaction(fastify, req, validatedFromAddress, validatedToAddress);
   } else {
     return await sendEthereumTransaction(fastify, req, validatedFromAddress, validatedToAddress);
   }
@@ -707,6 +732,48 @@ async function sendEthereumTransaction(
     };
   } catch (error: unknown) {
     logger.error(`Ethereum send failed: ${(error as Error).message}`);
+    throw fastify.httpErrors.internalServerError(`Transaction failed: ${(error as Error).message}`);
+  }
+}
+
+/**
+ * Send an Aeternity transaction (native AE transfer)
+ */
+async function sendAeternityTransaction(
+  fastify: FastifyInstance,
+  req: SendTransactionRequest,
+  fromAddress: string,
+  toAddress: string,
+): Promise<SendTransactionResponse> {
+  const aeternity = await Aeternity.getInstance(req.network);
+  const account = await aeternity.getWallet(fromAddress);
+  const amount = parseFloat(req.amount);
+
+  if (isNaN(amount) || amount <= 0) {
+    throw fastify.httpErrors.badRequest('Invalid amount');
+  }
+
+  if (req.token && req.token.toUpperCase() !== 'AE') {
+    throw fastify.httpErrors.badRequest('Aeternity token transfers are not supported via this endpoint. Use the DEX swap instead.');
+  }
+
+  try {
+    const sdk = aeternity.getSdkWithAccount(account);
+    const amountAettos = Math.floor(amount * 1e18).toString();
+
+    const result = await sdk.spend(amountAettos, toAddress as any, { onAccount: account });
+    const txHash = result?.hash || '';
+
+    return {
+      signature: txHash,
+      status: 1,
+      amount: req.amount,
+      token: 'AE',
+      toAddress,
+      fee: 0,
+    };
+  } catch (error: unknown) {
+    logger.error(`Aeternity send failed: ${(error as Error).message}`);
     throw fastify.httpErrors.internalServerError(`Transaction failed: ${(error as Error).message}`);
   }
 }

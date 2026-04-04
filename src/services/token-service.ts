@@ -83,6 +83,15 @@ export class TokenService {
     const tokenListPath = this.getTokenListPath(chain, network);
 
     if (!fs.existsSync(tokenListPath)) {
+      // Auto-create empty token list if directory can be created safely
+      const dirPath = path.dirname(tokenListPath);
+      const expectedRoot = path.join(rootPath(), 'conf', 'tokens');
+      if (path.resolve(dirPath).startsWith(path.resolve(expectedRoot))) {
+        await fse.ensureDir(dirPath);
+        await writeFile(tokenListPath, '[]', 'utf8');
+        logger.info(`Created empty token list for ${chain}/${network} at ${tokenListPath}`);
+        return [];
+      }
       throw new Error(`Token list not found for ${chain}/${network} at ${tokenListPath}`);
     }
 
@@ -227,6 +236,14 @@ export class TokenService {
           throw new Error(`Invalid Solana address: ${error.message}`);
         }
         break;
+
+      case SupportedChain.AETERNITY: {
+        const aeAddressRegex = /^(ct|ak)_[1-9A-HJ-NP-Za-km-z]{48,56}$/;
+        if (!aeAddressRegex.test(token.address)) {
+          throw new Error(`Invalid Aeternity token address: expected ct_ or ak_ prefix`);
+        }
+        break;
+      }
 
       default:
         throw new Error(`Unsupported chain for validation: ${chain}`);

@@ -1,3 +1,4 @@
+import { Aeternity } from '../chains/aeternity/aeternity';
 import { Ethereum } from '../chains/ethereum/ethereum';
 import { Solana } from '../chains/solana/solana';
 
@@ -5,7 +6,7 @@ export interface Chain {
   // TODO: Add shared chain properties (e.g., network, chainId, etc.)
 }
 
-export type ChainInstance = Ethereum | Solana;
+export type ChainInstance = Ethereum | Solana | Aeternity;
 
 export class UnsupportedChainException extends Error {
   constructor(message?: string) {
@@ -32,7 +33,7 @@ export async function getInitializedChain<_T>(chain: string, network: string): P
  */
 export function getSupportedChains(): string[] {
   // These should match the chains in getChainInstance
-  return ['ethereum', 'solana'];
+  return ['ethereum', 'solana', 'aeternity'];
 }
 
 export async function getChainInstance(chain: string, network: string): Promise<ChainInstance | undefined> {
@@ -43,6 +44,8 @@ export async function getChainInstance(chain: string, network: string): Promise<
     connection = await Ethereum.getInstance(network);
   } else if (chainLower === 'solana') {
     connection = await Solana.getInstance(network);
+  } else if (chainLower === 'aeternity') {
+    connection = await Aeternity.getInstance(network);
   } else {
     connection = undefined;
   }
@@ -69,6 +72,9 @@ export async function getConnector(
   } else if (connector === 'meteora') {
     const { Meteora } = await import('../connectors/meteora/meteora');
     return await Meteora.getInstance(network);
+  } else if (connector === 'superhero') {
+    const { Superhero } = await import('../connectors/superhero/superhero');
+    return await Superhero.getInstance(network);
   } else {
     throw new Error('unsupported chain or connector');
   }

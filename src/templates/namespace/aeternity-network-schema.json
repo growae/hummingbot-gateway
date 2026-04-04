@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "nodeURL": {
+      "type": "string"
+    },
+    "compilerURL": {
+      "type": "string"
+    },
+    "nativeCurrencySymbol": {
+      "type": "string"
+    },
+    "nativeCurrencyDecimals": {
+      "type": "integer"
+    },
+    "swapProvider": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

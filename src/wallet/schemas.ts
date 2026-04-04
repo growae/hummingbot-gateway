@@ -2,14 +2,14 @@ import { Type, Static } from '@sinclair/typebox';
 
 // Define schemas
 export const WalletAddressSchema = Type.String({
-  description: 'Wallet address (Ethereum format: 0x... or Solana format: base58)',
+  description: 'Wallet address (Ethereum format: 0x..., Solana format: base58, or Aeternity format: ak_...)',
 });
 
 export const AddWalletRequestSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain to add wallet to',
-    enum: ['ethereum', 'solana'],
-    examples: ['solana', 'ethereum'],
+    enum: ['ethereum', 'solana', 'aeternity'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   privateKey: Type.String({
     description: 'Private key for the wallet',
@@ -36,7 +36,7 @@ export const GetWalletsQuerySchema = Type.Object({
 export const GetWalletResponseSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain name',
-    examples: ['solana', 'ethereum'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   walletAddresses: Type.Array(WalletAddressSchema, {
     description: 'List of regular wallet addresses with private keys',
@@ -51,8 +51,8 @@ export const GetWalletResponseSchema = Type.Object({
 export const RemoveWalletRequestSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain to remove wallet from',
-    enum: ['ethereum', 'solana'],
-    examples: ['solana', 'ethereum'],
+    enum: ['ethereum', 'solana', 'aeternity'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   address: Type.String({
     description: 'Wallet address to remove',
@@ -80,9 +80,9 @@ export const SignMessageResponseSchema = Type.Object({
 export const AddHardwareWalletRequestSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain for hardware wallet',
-    enum: ['ethereum', 'solana'],
+    enum: ['ethereum', 'solana', 'aeternity'],
     default: 'solana',
-    examples: ['solana', 'ethereum'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   address: Type.String({
     description: 'Hardware wallet address to add (must exist on connected Ledger device)',
@@ -138,8 +138,8 @@ export const ListHardwareWalletsResponseSchema = Type.Object({
 export const SetDefaultWalletRequestSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain to set default wallet for',
-    enum: ['ethereum', 'solana'],
-    examples: ['solana', 'ethereum'],
+    enum: ['ethereum', 'solana', 'aeternity'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   address: Type.String({
     description: 'Wallet address to set as default',
@@ -181,8 +181,8 @@ export type SetDefaultWalletResponse = Static<typeof SetDefaultWalletResponseSch
 export const CreateWalletRequestSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain to create wallet for',
-    enum: ['ethereum', 'solana'],
-    examples: ['solana', 'ethereum'],
+    enum: ['ethereum', 'solana', 'aeternity'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   setDefault: Type.Optional(
     Type.Boolean({
@@ -205,8 +205,8 @@ export const CreateWalletResponseSchema = Type.Object({
 export const ShowPrivateKeyRequestSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain of the wallet',
-    enum: ['ethereum', 'solana'],
-    examples: ['solana', 'ethereum'],
+    enum: ['ethereum', 'solana', 'aeternity'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   address: Type.String({
     description: 'Wallet address to get private key for',
@@ -232,8 +232,8 @@ export const ShowPrivateKeyResponseSchema = Type.Object({
 export const SendTransactionRequestSchema = Type.Object({
   chain: Type.String({
     description: 'Blockchain to send transaction on',
-    enum: ['ethereum', 'solana'],
-    examples: ['solana', 'ethereum'],
+    enum: ['ethereum', 'solana', 'aeternity'],
+    examples: ['solana', 'ethereum', 'aeternity'],
   }),
   network: Type.String({
     description: 'Network to use',

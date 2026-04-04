@@ -117,6 +117,9 @@ export async function getUnifiedPositionInfo(
     case 'solana':
       return getSolanaPositionInfo(fastify, connector, network, positionAddress);
 
+    case 'aeternity':
+      throw fastify.httpErrors.badRequest('CLMM is not supported on Aeternity. Use the AMM swap endpoints instead (/connector/superhero).');
+
     default:
       throw fastify.httpErrors.badRequest(`Unsupported chain: ${chain}`);
   }

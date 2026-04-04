@@ -329,6 +329,9 @@ export class CoinGeckoService {
       return EVM_REGEX.test(tokenAddress);
     } else if (chain === 'solana') {
       return SOLANA_REGEX.test(tokenAddress);
+    } else if (chain === 'aeternity') {
+      const AETERNITY_REGEX = /^(ct|ak)_[1-9A-HJ-NP-Za-km-z]{48,56}$/;
+      return AETERNITY_REGEX.test(tokenAddress);
     }
 
     // Reject unknown chains

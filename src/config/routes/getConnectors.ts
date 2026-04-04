@@ -9,6 +9,7 @@ import { MeteoraConfig } from '../../connectors/meteora/meteora.config';
 import { OrcaConfig } from '../../connectors/orca/orca.config';
 import { PancakeswapSolConfig } from '../../connectors/pancakeswap-sol/pancakeswap-sol.config';
 import { RaydiumConfig } from '../../connectors/raydium/raydium.config';
+import { SuperheroConfig } from '../../connectors/superhero/superhero.config';
 import { UniswapConfig } from '../../connectors/uniswap/uniswap.config';
 import { logger } from '../../services/logger';
 
@@ -76,6 +77,12 @@ export const connectorsConfig = [
     trading_types: [...OrcaConfig.tradingTypes],
     chain: OrcaConfig.chain,
     networks: [...OrcaConfig.networks],
+  },
+  {
+    name: 'superhero',
+    trading_types: [...SuperheroConfig.tradingTypes],
+    chain: SuperheroConfig.chain,
+    networks: [...SuperheroConfig.networks],
   },
 ];
 

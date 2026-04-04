@@ -62,6 +62,7 @@ export const saveTokenRoute: FastifyPluginAsync = async (fastify) => {
             // If checksumming fails, use the address as-is
           }
         }
+        // Aeternity and Solana addresses are used as-is (no checksum normalization)
 
         const token = {
           ...tokenInfo,

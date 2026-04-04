@@ -2,6 +2,7 @@ import sensible from '@fastify/sensible';
 import { Type } from '@sinclair/typebox';
 import { FastifyPluginAsync } from 'fastify';
 
+import { Aeternity } from '../../chains/aeternity/aeternity';
 import { Ethereum } from '../../chains/ethereum/ethereum';
 import { Solana } from '../../chains/solana/solana';
 import { logger } from '../../services/logger';
@@ -42,6 +43,8 @@ export const removeWalletRoute: FastifyPluginAsync = async (fastify) => {
         validatedAddress = Ethereum.validateAddress(address);
       } else if (chain.toLowerCase() === 'solana') {
         validatedAddress = Solana.validateAddress(address);
+      } else if (chain.toLowerCase() === 'aeternity') {
+        validatedAddress = Aeternity.validateAddress(address);
       } else {
         throw new Error(`Unsupported chain: ${chain}`);
       }

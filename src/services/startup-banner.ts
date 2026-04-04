@@ -1,3 +1,4 @@
+import { Aeternity } from '../chains/aeternity/aeternity';
 import { Ethereum } from '../chains/ethereum/ethereum';
 import { getEthereumNetworkConfig } from '../chains/ethereum/ethereum.config';
 import { Solana } from '../chains/solana/solana';
@@ -20,6 +21,9 @@ export async function displayChainConfigurations(): Promise<void> {
 
     // Display Ethereum configuration
     await displayEthereumConfig();
+
+    // Display Aeternity configuration
+    await displayAeternityConfig();
   } catch (error: any) {
     logger.warn(`Failed to display chain configurations: ${error.message}`);
   }
@@ -132,5 +136,35 @@ async function displayEthereumConfig(): Promise<void> {
     }
   } catch (error: any) {
     logger.debug(`Ethereum configuration not available: ${error.message}`);
+  }
+}
+
+async function displayAeternityConfig(): Promise<void> {
+  try {
+    const config = ConfigManagerV2.getInstance();
+    const defaultNetwork = config.get('aeternity.defaultNetwork') || 'mainnet';
+    const namespaceId = `aeternity-${defaultNetwork}`;
+    const nodeURL = config.get(`${namespaceId}.nodeURL`);
+
+    if (!nodeURL) {
+      logger.debug('Aeternity configuration not available');
+      return;
+    }
+
+    try {
+      const aeternity = await Aeternity.getInstance(defaultNetwork);
+      const height = await aeternity.getCurrentHeight();
+
+      logger.info(
+        `📡 Aeternity (defaultNetwork: ${defaultNetwork}): Block #${height.toLocaleString()} - ${redactUrl(nodeURL)}`,
+      );
+    } catch (error: any) {
+      logger.info(
+        `📡 Aeternity (defaultNetwork: ${defaultNetwork}): Unable to fetch block height - ${redactUrl(nodeURL)}`,
+      );
+      logger.debug(`Aeternity block fetch error: ${error.message}`);
+    }
+  } catch (error: any) {
+    logger.debug(`Aeternity configuration not available: ${error.message}`);
   }
 }

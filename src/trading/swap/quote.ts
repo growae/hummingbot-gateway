@@ -1,7 +1,8 @@
 import { Type, Static } from '@sinclair/typebox';
 import { FastifyPluginAsync } from 'fastify';
 
-// Solana connector imports
+// Chain config imports
+import { getAeternityNetworkConfig } from '../../chains/aeternity/aeternity.config';
 import { getEthereumNetworkConfig } from '../../chains/ethereum/ethereum.config';
 import { getSolanaNetworkConfig } from '../../chains/solana/solana.config';
 import { quoteSwap as zeroXRouterQuoteSwap } from '../../connectors/0x/router-routes/quoteSwap';
@@ -19,6 +20,9 @@ import { quoteSwap as raydiumClmmQuoteSwap } from '../../connectors/raydium/clmm
 import { quoteSwap as uniswapAmmQuoteSwap } from '../../connectors/uniswap/amm-routes/quoteSwap';
 import { quoteSwap as uniswapClmmQuoteSwap } from '../../connectors/uniswap/clmm-routes/quoteSwap';
 import { quoteSwap as uniswapRouterQuoteSwap } from '../../connectors/uniswap/router-routes/quoteSwap';
+
+// Aeternity connector imports
+import { getSuperheroAmmQuote } from '../../connectors/superhero/amm-routes/quoteSwap';
 
 // Config and utilities
 import { ChainQuoteSwapResponseSchema } from '../../schemas/chain-schema';
@@ -238,6 +242,52 @@ async function getEthereumQuoteSwap(
 }
 
 /**
+ * Get an Aeternity swap quote via Superhero DEX
+ */
+async function getAeternityQuoteSwap(
+  network: string,
+  baseToken: string,
+  quoteToken: string,
+  amount: number,
+  side: 'BUY' | 'SELL',
+  slippagePct?: number,
+  connector?: string,
+): Promise<any> {
+  try {
+    const networkConfig = getAeternityNetworkConfig(network);
+
+    const swapProvider = connector || networkConfig.swapProvider || 'superhero/amm';
+    const [connectorName, connectorType] = swapProvider.split('/');
+
+    logger.info(
+      `Using swap provider: ${swapProvider} for network: ${network}${connector ? ' (explicit)' : ' (from config)'}`,
+    );
+
+    let poolAddress: string | undefined;
+    if (connectorType === 'amm') {
+      const poolService = PoolService.getInstance();
+      const pool = await poolService.getPool(connectorName, network, connectorType, baseToken, quoteToken);
+      if (pool) {
+        poolAddress = pool.address;
+        logger.info(`Found pool: ${poolAddress} for ${baseToken}-${quoteToken}`);
+      }
+    }
+
+    if (swapProvider === 'superhero/amm') {
+      return await getSuperheroAmmQuote(network, poolAddress, baseToken, quoteToken, amount, side, slippagePct);
+    }
+
+    throw httpErrors.badRequest(`Unsupported swap provider: ${swapProvider}`);
+  } catch (error) {
+    logger.error(`Error getting swap quote: ${error.message}`);
+    if (error.statusCode) {
+      throw error;
+    }
+    throw httpErrors.internalServerError(`Failed to get swap quote: ${error.message}`);
+  }
+}
+
+/**
  * Get a swap quote across any supported chain
  */
 export async function getUnifiedQuoteSwap(
@@ -261,6 +311,9 @@ export async function getUnifiedQuoteSwap(
 
     case 'solana':
       return getSolanaQuoteSwap(network, baseToken, quoteToken, amount, side, slippagePct, connector);
+
+    case 'aeternity':
+      return getAeternityQuoteSwap(network, baseToken, quoteToken, amount, side, slippagePct, connector);
 
     default:
       throw httpErrors.badRequest(`Unsupported chain: ${chain}`);

@@ -49,7 +49,7 @@ export const getChainsRoute: FastifyPluginAsync = async (fastify) => {
         const network = networkParts.join('-'); // Handle networks like mainnet-beta
 
         // Only process known chains
-        if (['ethereum', 'solana'].includes(chain)) {
+        if (['ethereum', 'solana', 'aeternity'].includes(chain)) {
           if (!chainNetworks[chain]) {
             chainNetworks[chain] = [];
           }
@@ -57,12 +57,15 @@ export const getChainsRoute: FastifyPluginAsync = async (fastify) => {
         }
       });
 
-      // Ensure we have both chains even if no networks are loaded
+      // Ensure we have all chains even if no networks are loaded
       if (!chainNetworks['ethereum']) {
         chainNetworks['ethereum'] = [];
       }
       if (!chainNetworks['solana']) {
         chainNetworks['solana'] = [];
+      }
+      if (!chainNetworks['aeternity']) {
+        chainNetworks['aeternity'] = [];
       }
 
       const chains = Object.entries(chainNetworks).map(([chain, networks]) => ({
