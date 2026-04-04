@@ -5,6 +5,7 @@ import fse from 'fs-extra';
 
 import { ConfigManagerCertPassphrase } from '../../services/config-manager-cert-passphrase';
 import { logger } from '../../services/logger';
+import { TokenService } from '../../services/token-service';
 import { walletPath } from '../../wallet/utils';
 
 import { getAeternityNetworkConfig, getAeternityChainConfig } from './aeternity.config';
@@ -151,6 +152,20 @@ export class Aeternity {
     if (addressOrSymbol.startsWith('ct_')) {
       return this.getTokenInfo(addressOrSymbol);
     }
+    // Look up by symbol in the saved token list
+    try {
+      const saved = await TokenService.getInstance().getToken('aeternity', this.network, addressOrSymbol);
+      if (saved) {
+        return {
+          address: saved.address,
+          name: saved.name,
+          symbol: saved.symbol,
+          decimals: saved.decimals,
+        };
+      }
+    } catch (e: any) {
+      logger.warn(`Token list lookup failed for ${addressOrSymbol}: ${e.message}`);
+    }
     return undefined;
   }
 
@@ -181,17 +196,17 @@ export class Aeternity {
     balances[this.nativeTokenSymbol] = Number(nativeBalance) / Math.pow(10, this.nativeTokenDecimals);
 
     if (tokens && tokens.length > 0) {
-      for (const tokenAddr of tokens) {
-        if (tokenAddr === this.nativeTokenSymbol || tokenAddr === 'AE') continue;
+      for (const tokenId of tokens) {
+        if (tokenId === this.nativeTokenSymbol || tokenId === 'AE') continue;
         try {
-          const balance = await this.getTokenBalance(tokenAddr, address);
-          const info = await this.getTokenInfo(tokenAddr);
-          const decimals = info?.decimals ?? 18;
-          const symbol = info?.symbol ?? tokenAddr;
-          balances[symbol] = Number(balance) / Math.pow(10, decimals);
+          const tokenInfo = await this.getToken(tokenId);
+          if (!tokenInfo || tokenInfo.address === 'AE') continue;
+          const contractAddr = tokenInfo.address;
+          const balance = await this.getTokenBalance(contractAddr, address);
+          balances[tokenInfo.symbol] = Number(balance) / Math.pow(10, tokenInfo.decimals);
         } catch (err: any) {
-          logger.warn(`Error getting balance for ${tokenAddr}: ${err.message}`);
-          balances[tokenAddr] = 0;
+          logger.warn(`Error getting balance for ${tokenId}: ${err.message}`);
+          balances[tokenId] = 0;
         }
       }
     } else {

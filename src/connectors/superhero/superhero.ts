@@ -2,6 +2,7 @@ import { AeSdk, MemoryAccount } from '@aeternity/aepp-sdk';
 
 import { Aeternity, AeternityTokenInfo } from '../../chains/aeternity/aeternity';
 import { logger } from '../../services/logger';
+import { TokenService } from '../../services/token-service';
 
 import {
   ACI,
@@ -98,6 +99,22 @@ export class Superhero {
       return this._aeternity.getTokenInfo(symbolOrAddress);
     }
 
+    // Look up by symbol in the saved token list
+    try {
+      const saved = await TokenService.getInstance().getToken('aeternity', this.network, symbolOrAddress);
+      if (saved) {
+        this.cacheTokenAddress(saved.symbol, saved.address);
+        return {
+          address: saved.address,
+          name: saved.name,
+          symbol: saved.symbol,
+          decimals: saved.decimals,
+        };
+      }
+    } catch (e: any) {
+      logger.warn(`Token list lookup failed for ${symbolOrAddress}: ${e.message}`);
+    }
+
     return undefined;
   }
 
@@ -171,10 +188,17 @@ export class Superhero {
     }
   }
 
+  private _tokenAddressCache: Record<string, string> = {};
+
   public resolveTokenAddress(symbolOrAddress: string): string {
     if (symbolOrAddress === 'AE') return this.waeAddress;
     if (symbolOrAddress === 'WAE') return this.waeAddress;
-    return symbolOrAddress;
+    if (symbolOrAddress.startsWith('ct_')) return symbolOrAddress;
+    return this._tokenAddressCache[symbolOrAddress] || symbolOrAddress;
+  }
+
+  public cacheTokenAddress(symbol: string, address: string): void {
+    this._tokenAddressCache[symbol] = address;
   }
 
   public isNativeAe(symbolOrAddress: string): boolean {
